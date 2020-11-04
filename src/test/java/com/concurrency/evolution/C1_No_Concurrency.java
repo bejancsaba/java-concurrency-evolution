@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.concurrency.evolution.ConcurrencySupport.PERSISTENCE_FORK_FACTOR;
 import static com.concurrency.evolution.ConcurrencySupport.PERSISTENCE_LATENCY;
-import static com.concurrency.evolution.ConcurrencySupport.ITERATION;
+import static com.concurrency.evolution.ConcurrencySupport.USERS;
 import static com.concurrency.evolution.ConcurrencySupport.SERVICE_A_LATENCY;
 import static com.concurrency.evolution.ConcurrencySupport.SERVICE_B_LATENCY;
 import static com.concurrency.evolution.ConcurrencySupport.persistence;
@@ -24,9 +24,9 @@ public class C1_No_Concurrency {
     public void shouldBeNotConcurrent() {
         start();
 
-        for (int iteration = 1; iteration <= ITERATION; iteration++) {
-            String serviceA = serviceA(iteration);
-            String serviceB = serviceB(iteration);
+        for (int user = 1; user <= USERS; user++) {
+            String serviceA = serviceA(user);
+            String serviceB = serviceB(user);
             for (int i = 1; i <= PERSISTENCE_FORK_FACTOR; i++) {
                 persistence(i, serviceA, serviceB);
             }
@@ -34,7 +34,7 @@ public class C1_No_Concurrency {
 
         stop(
                 1,
-                ITERATION * (SERVICE_A_LATENCY + SERVICE_B_LATENCY + PERSISTENCE_LATENCY * PERSISTENCE_FORK_FACTOR)
+                USERS * (SERVICE_A_LATENCY + SERVICE_B_LATENCY + PERSISTENCE_LATENCY * PERSISTENCE_FORK_FACTOR)
         );
     }
 }

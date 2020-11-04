@@ -11,7 +11,7 @@ import java.nio.file.Paths;
 @Slf4j
 class ConcurrencySupport {
 
-    static final int ITERATION = 10;
+    static final int USERS = 10;
     static final int PERSISTENCE_FORK_FACTOR = 3;
 
     static final long SERVICE_A_LATENCY = 1000;
@@ -76,7 +76,7 @@ class ConcurrencySupport {
     }
 
     static int fullConcurrencyThreadCount() {
-        return ITERATION + ITERATION * (2 + PERSISTENCE_FORK_FACTOR);
+        return USERS + USERS * (2 + PERSISTENCE_FORK_FACTOR);
     }
 
     static int fullConcurrencyExpectedTime() {

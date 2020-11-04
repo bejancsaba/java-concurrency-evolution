@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.concurrency.evolution.ConcurrencySupport.PERSISTENCE_FORK_FACTOR;
-import static com.concurrency.evolution.ConcurrencySupport.ITERATION;
+import static com.concurrency.evolution.ConcurrencySupport.USERS;
 import static com.concurrency.evolution.ConcurrencySupport.SERVICE_A_LATENCY;
 import static com.concurrency.evolution.ConcurrencySupport.SERVICE_B_LATENCY;
 import static com.concurrency.evolution.ConcurrencySupport.persistence;
@@ -24,8 +24,8 @@ public class C4_Nested_Synchronised_Threads {
         start();
 
         List<Thread> threads = new ArrayList<>();
-        for (int iteration = 1; iteration <= ITERATION; iteration++) {
-            Thread thread = new Thread(new Iteration(iteration));
+        for (int user = 1; user <= USERS; user++) {
+            Thread thread = new Thread(new UserFlow(user));
             thread.start();
             threads.add(thread);
         }
@@ -38,20 +38,20 @@ public class C4_Nested_Synchronised_Threads {
         stop();
     }
 
-    static class Iteration implements Runnable {
+    static class UserFlow implements Runnable {
 
-        private final int iteration;
+        private final int user;
         private final List<String> serviceResult = new ArrayList<>();
 
-        Iteration(int iteration) {
-            this.iteration = iteration;
+        UserFlow(int user) {
+            this.user = user;
         }
 
         @SneakyThrows
         @Override
         public void run() {
-            Thread threadA = new Thread(new Service(this, "A", SERVICE_A_LATENCY, iteration));
-            Thread threadB = new Thread(new Service(this, "B", SERVICE_B_LATENCY, iteration));
+            Thread threadA = new Thread(new Service(this, "A", SERVICE_A_LATENCY, user));
+            Thread threadB = new Thread(new Service(this, "B", SERVICE_B_LATENCY, user));
             threadA.start();
             threadB.start();
             threadA.join();
@@ -77,12 +77,12 @@ public class C4_Nested_Synchronised_Threads {
 
     static class Service implements Runnable {
 
-        private final Iteration callback;
+        private final UserFlow callback;
         private final String name;
         private final long latency;
         private final int iteration;
 
-        Service(Iteration callback, String name, long latency, int iteration) {
+        Service(UserFlow callback, String name, long latency, int iteration) {
             this.callback = callback;
             this.name = name;
             this.latency = latency;

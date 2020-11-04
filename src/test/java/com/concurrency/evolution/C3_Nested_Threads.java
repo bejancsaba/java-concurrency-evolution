@@ -9,7 +9,7 @@ import java.util.List;
 
 import static com.concurrency.evolution.ConcurrencySupport.PERSISTENCE_FORK_FACTOR;
 import static com.concurrency.evolution.ConcurrencySupport.PERSISTENCE_LATENCY;
-import static com.concurrency.evolution.ConcurrencySupport.ITERATION;
+import static com.concurrency.evolution.ConcurrencySupport.USERS;
 import static com.concurrency.evolution.ConcurrencySupport.SERVICE_A_LATENCY;
 import static com.concurrency.evolution.ConcurrencySupport.SERVICE_B_LATENCY;
 import static com.concurrency.evolution.ConcurrencySupport.persistence;
@@ -25,8 +25,8 @@ public class C3_Nested_Threads {
         start();
 
         List<Thread> threads = new ArrayList<>();
-        for (int iteration = 1; iteration <= ITERATION; iteration++) {
-            Thread thread = new Thread(new Iteration(iteration));
+        for (int user = 1; user <= USERS; user++) {
+            Thread thread = new Thread(new UserFlow(user));
             thread.start();
             threads.add(thread);
         }
@@ -36,23 +36,23 @@ public class C3_Nested_Threads {
             thread.join();
         }
 
-        stop(ITERATION + ITERATION * PERSISTENCE_FORK_FACTOR,
+        stop(USERS + USERS * PERSISTENCE_FORK_FACTOR,
                 SERVICE_A_LATENCY + SERVICE_B_LATENCY + PERSISTENCE_LATENCY);
     }
 
-    static class Iteration implements Runnable {
+    static class UserFlow implements Runnable {
 
-        private final int iteration;
+        private final int user;
 
-        Iteration(int iteration) {
-            this.iteration =iteration;
+        UserFlow(int user) {
+            this.user = user;
         }
 
         @SneakyThrows
         @Override
         public void run() {
-            String serviceA = serviceA(iteration);
-            String serviceB = serviceB(iteration);
+            String serviceA = serviceA(user);
+            String serviceB = serviceB(user);
 
             List<Thread> threads = new ArrayList<>();
             for (int i = 1; i <= PERSISTENCE_FORK_FACTOR; i++) {

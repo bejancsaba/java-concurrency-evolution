@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.concurrency.evolution.ConcurrencySupport.PERSISTENCE_FORK_FACTOR;
-import static com.concurrency.evolution.ConcurrencySupport.ITERATION;
+import static com.concurrency.evolution.ConcurrencySupport.USERS;
 import static com.concurrency.evolution.ConcurrencySupport.SERVICE_A_LATENCY;
 import static com.concurrency.evolution.ConcurrencySupport.SERVICE_B_LATENCY;
 import static com.concurrency.evolution.ConcurrencySupport.persistence;
@@ -23,13 +23,13 @@ import static com.concurrency.evolution.ConcurrencySupport.stop;
 @Slf4j
 public class C6_ForkJoinFramework {
 
-    private static final ForkJoinPool commonPool = new ForkJoinPool(10);
+    private static final ForkJoinPool commonPool = new ForkJoinPool(2000);
 
     @Test
     public void shouldExecuteIterationsConcurrently() throws InterruptedException {
         start();
 
-        commonPool.submit(new IterationRecursiveAction(IntStream.rangeClosed(1, ITERATION)
+        commonPool.submit(new UserFlowRecursiveAction(IntStream.rangeClosed(1, USERS)
                 .boxed()
                 .collect(Collectors.toList())));
 
@@ -40,29 +40,27 @@ public class C6_ForkJoinFramework {
         stop();
     }
 
-    public static class IterationRecursiveAction extends RecursiveAction {
+    public static class UserFlowRecursiveAction extends RecursiveAction {
 
         private final List<Integer> workload;
 
-        public IterationRecursiveAction(List<Integer> workload) {
+        public UserFlowRecursiveAction(List<Integer> workload) {
             this.workload = workload;
         }
 
         @Override
         protected void compute() {
             if (workload.size() > 1) {
-                commonPool.submit(new IterationRecursiveAction(workload.subList(1, workload.size())));
+                commonPool.submit(new UserFlowRecursiveAction(workload.subList(1, workload.size())));
             }
 
-            int act = workload.get(0);
+            int user = workload.get(0);
 
-            ForkJoinTask<String> taskA = commonPool.submit(() -> service("A", SERVICE_A_LATENCY, act));
-            ForkJoinTask<String> taskB = commonPool.submit(() -> service("B", SERVICE_B_LATENCY, act));
+            ForkJoinTask<String> taskA = commonPool.submit(() -> service("A", SERVICE_A_LATENCY, user));
+            ForkJoinTask<String> taskB = commonPool.submit(() -> service("B", SERVICE_B_LATENCY, user));
 
-            for (int i = 1; i <= PERSISTENCE_FORK_FACTOR; i++) {
-                int finalI = i;
-                commonPool.submit(() -> persistence(finalI, taskA.join(), taskB.join()));
-            }
+            IntStream.rangeClosed(1, PERSISTENCE_FORK_FACTOR)
+                    .forEach(i -> commonPool.submit(() -> persistence(i, taskA.join(), taskB.join())));
         }
     }
 }

@@ -11,7 +11,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.concurrency.evolution.ConcurrencySupport.PERSISTENCE_FORK_FACTOR;
-import static com.concurrency.evolution.ConcurrencySupport.ITERATION;
+import static com.concurrency.evolution.ConcurrencySupport.USERS;
 import static com.concurrency.evolution.ConcurrencySupport.SERVICE_A_LATENCY;
 import static com.concurrency.evolution.ConcurrencySupport.SERVICE_B_LATENCY;
 import static com.concurrency.evolution.ConcurrencySupport.persistence;
@@ -21,16 +21,16 @@ import static com.concurrency.evolution.ConcurrencySupport.stop;
 
 public class C5_ExecutorService {
 
-    private static final int EXECUTOR_THREAD_COUNT = 20;
-    private static final ExecutorService executor = Executors.newFixedThreadPool(EXECUTOR_THREAD_COUNT);
-    private static final CountDownLatch latch = new CountDownLatch(ITERATION);
+    private static final int EXECUTOR_THREAD_COUNT = 2000;
+    private static final ExecutorService executor = Executors.newScheduledThreadPool(EXECUTOR_THREAD_COUNT);
+    private static final CountDownLatch latch = new CountDownLatch(USERS);
 
     @Test
     public void shouldExecuteIterationsConcurrently() throws InterruptedException {
         start();
 
-        for (int iteration = 1; iteration <= ITERATION; iteration++) {
-            executor.execute(new Iteration(iteration));
+        for (int user = 1; user <= USERS; user++) {
+            executor.execute(new UserFlow(user));
         }
 
         // Stop Condition
@@ -41,19 +41,19 @@ public class C5_ExecutorService {
         stop();
     }
 
-    static class Iteration implements Runnable {
+    static class UserFlow implements Runnable {
 
-        private final int iteration;
+        private final int user;
 
-        Iteration(int iteration) {
-            this.iteration = iteration;
+        UserFlow(int user) {
+            this.user = user;
         }
 
         @SneakyThrows
         @Override
         public void run() {
-            Future<String> serviceA = executor.submit(new Service("A", SERVICE_A_LATENCY, iteration));
-            Future<String> serviceB = executor.submit(new Service("B", SERVICE_B_LATENCY, iteration));
+            Future<String> serviceA = executor.submit(new Service("A", SERVICE_A_LATENCY, user));
+            Future<String> serviceB = executor.submit(new Service("B", SERVICE_B_LATENCY, user));
 
             for (int i = 1; i <= PERSISTENCE_FORK_FACTOR; i++) {
                 executor.execute(new Persistence(i, serviceA.get(), serviceB.get()));
